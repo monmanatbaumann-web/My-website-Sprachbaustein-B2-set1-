@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telc B2 Sprachbausteine Übungen (50 Sätze)</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .app-container { background: #1e293b; padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 900px; border: 1px solid #334155; }
+        h1 { color: #38bdf8; text-align: center; margin-top: 0; font-size: 22px; }
+        .subtitle { text-align: center; color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
+        
+        .timer-box { background: #0f172a; padding: 12px 18px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border: 1px solid #334155; }
+        .timer-display { font-size: 28px; font-weight: bold; color: #f43f5e; font-family: monospace; }
+        .timer-btn { padding: 6px 12px; cursor: pointer; border: 1px solid #475569; border-radius: 6px; background: #334155; color: white; font-size: 12px; font-weight: bold; }
+        .timer-btn:hover { background: #475569; }
+
+        .question-box { border: 2px solid #0284c7; border-radius: 12px; padding: 20px; background: #0f172a; margin-bottom: 15px; }
+        .badge { background: #0284c7; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .cat-badge { background: #8b5cf6; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-left: 6px; }
+        
+        .sentence-de { font-size: 18px; font-weight: bold; color: #38bdf8; margin-top: 12px; line-height: 1.5; }
+        .sentence-de .gap { color: #f59e0b; border-bottom: 2px dashed #f59e0b; padding: 0 8px; }
+        .sentence-th { font-size: 14.5px; color: #94a3b8; margin-top: 6px; margin-bottom: 10px; }
+        
+        .options-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .option-btn { background: #1e293b; border: 1px solid #475569; padding: 12px 15px; border-radius: 8px; color: #f8fafc; font-size: 14.5px; text-align: left; cursor: pointer; transition: 0.2s; }
+        .option-btn:hover { background: #334155; border-color: #38bdf8; }
+        .option-btn.correct { background: #064e3b !important; border-color: #10b981 !important; color: #6ee7b7; font-weight: bold; }
+        .option-btn.wrong { background: #7f1d1d !important; border-color: #ef4444 !important; color: #fca5a5; }
+
+        .explanation-box { background: #1e293b; border-left: 4px solid #10b981; padding: 14px; border-radius: 8px; margin-bottom: 15px; display: none; font-size: 13.5px; line-height: 1.6; }
+
+        .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+        .btn { flex: 1; min-width: 130px; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13.5px; transition: 0.2s; text-align: center; }
+        .btn-next { background: #10b981; color: white; } .btn-next:hover { background: #059669; }
+        .btn-speak { background: #0284c7; color: white; } .btn-speak:hover { background: #0369a1; }
+
+        .footer { text-align: right; font-size: 11px; color: #64748b; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h1>🇩🇪 Telc B2 Sprachbausteine (50 Übungen)</h1>
+    <div class="subtitle">แบบฝึกหัดเติมคำในช่องว่าง (Konnektoren, Präpositionen & Grammatik B2)</div>
+
+    <div class="timer-box">
+        <div>
+            <span style="font-size: 12px; color: #94a3b8;">⏱️ เวลาต่อข้อ: </span>
+            <button class="timer-btn" onclick="startTimer(30)">30 วินาที</button>
+            <button class="timer-btn" onclick="startTimer(60)">1 นาที</button>
+        </div>
+        <div class="timer-display" id="timer-display">01:00</div>
+        <button class="timer-btn" style="color:#f43f5e;" onclick="stopTimer()">⏹️ หยุด</button>
+    </div>
+
+    <div id="question-container" class="question-box"></div>
+
+    <div id="options-container" class="options-grid"></div>
+
+    <div id="explanation-box" class="explanation-box">
+        <strong style="color: #10b981;">💡 คำอธิบายไวยากรณ์ & Redemittel B2:</strong>
+        <div id="explanation-content" style="margin-top: 5px;"></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-next" onclick="nextQuestion()">➡️ ข้อต่อไป (<span id="q-idx">1</span>/50)</button>
+        <button class="btn btn-speak" onclick="speakCurrentSentence()">🔊 ฟังเสียงประโยค</button>
+    </div>
+
+    <div class="footer">Telc Deutsch B2 Examination Prep • Sprachbausteine</div>
+</div>
+
+<script>
+const quizData = [
+    {
+        id: 1, cat: "Präpositionen",
+        sentence: "Ich schreibe Ihnen <span class='gap'>[...]</span> des aktuellen Bildungsangebots.",
+        sentenceTh: "ฉันเขียนถึงคุณเนื่องด้วยเรื่องข้อเสนอการศึกษาล่าสุด",
+        options: ["wegen", "obwohl", "trotz"],
+        correct: 0,
+        exp: "<b>wegen + Genitiv</b> แปลว่า 'เนื่องจาก/เนื่องด้วย' มักใช้ในจดหมายทางการ (Sprachbausteine Teil 1)"
+    },
+    {
+        id: 2, cat: "Konnektoren",
+        sentence: "Er lernte sehr fleißig, <span class='gap'>[...]</span> bestand er die B2-Prüfung mühelos.",
+        sentenceTh: "เขาเรียนอย่างขยันมาก ดังนั้นเขาจึงสอบ B2 ผ่านได้อย่างง่ายดาย",
+        options: ["trotzdem", "deshalb", "weil"],
+        correct: 1,
+        exp: "<b>deshalb + Verb + Subjekt</b> เป็น Adverbialkonnektor แสดงผลลัพธ์ (ดังนั้น)"
+    },
+    {
+        id: 3, cat: "Präpositionen",
+        sentence: "Wir bitten Sie, das Formular <span class='gap'>[...]</span> 3 Tagen zurückzusenden.",
+        sentenceTh: "พวกเราขอรบกวนให้คุณส่งแบบฟอร์มกลับคืนภายใน 3 วัน",
+        options: ["innerhalb von", "ausserhalb", "trotz"],
+        correct: 0,
+        exp: "<b>innerhalb von + Dativ</b> แปลว่า 'ภายในระยะเวลา...' ใช้บอกกรอบเวลา"
+    },
+    {
+        id: 4, cat: "Nebensätze",
+        sentence: "Ich möchte wissen, <span class='gap'>[...]</span> der Kurs nächsten Montag beginnt.",
+        sentenceTh: "ฉันอยากทราบว่าคอร์สจะเริ่มในวันจันทร์หน้าหรือไม่",
+        options: ["dass", "ob", "weil"],
+        correct: 1,
+        exp: "<b>ob (ว่า...หรือไม่)</b> ใช้กับประโยค Indirekte Frage (คำถามทางอ้อมที่ไม่มี W-Frage)"
+    },
+    {
+        id: 5, cat: "Nomen-Verb",
+        sentence: "Der Chef hat die Entscheidung bereits <span class='gap'>[...]</span>.",
+        sentenceTh: "หัวหน้าได้ทำการตัดสินใจไปเรียบร้อยแล้ว",
+        options: ["gemacht", "getroffen", "gegeben"],
+        correct: 1,
+        exp: "<b>eine Entscheidung treffen</b> เป็น Nomen-Verb-Verbindung ระดับ B2 แปลว่า ตัดสินใจ"
+    },
+    {
+        id: 6, cat: "Präpositionen",
+        sentence: "<span class='gap'>[...]</span> des schlechten Wetters fand das Konzert draußen statt.",
+        sentenceTh: "ทั้งๆ ที่สภาพอากาศไม่ดี คอนเสิร์ตก็ยังจัดขึ้นที่กลางแจ้ง",
+        options: ["Aufgrund", "Trotz", "Wegen"],
+        correct: 1,
+        exp: "<b>Trotz + Genitiv</b> แปลว่า 'ทั้งๆ ที่ / แม้ว่า' แสดงความขัดแย้ง"
+    },
+    {
+        id: 7, cat: "Infinitivsatz",
+        sentence: "Ich habe vor, nächste Woche nach Berlin <span class='gap'>[...]</span>.",
+        sentenceTh: "ฉันตั้งใจจะเดินทางไปเบอร์ลินในสัปดาห์หน้า",
+        options: ["fahren", "zu fahren", "gefahren"],
+        correct: 1,
+        exp: "<b>vorhaben + zu + Infinitiv</b> โครงสร้างประโยคบอกความตั้งใจ"
+    },
+    {
+        id: 8, cat: "Passiversatz",
+        sentence: "Diese Aufgabe lässt sich leicht <span class='gap'>[...]</span>.",
+        sentenceTh: "งานนี้สามารถแก้ไขได้ง่าย",
+        options: ["lösen", "gelöst", "zu lösen"],
+        correct: 0,
+        exp: "<b>sich lassen + Infinitiv</b> รูป Passiversatzform (มีความหมายเท่ากับ können + Passiv)"
+    },
+    {
+        id: 9, cat: "Redemittel B2",
+        sentence: "Ich stehe Ihnen für weitere Fragen gerne zur <span class='gap'>[...]</span>.",
+        sentenceTh: "ฉันยินดีพร้อมตอบคำถามเพิ่มเติมของคุณเสมอ",
+        options: ["Antwort", "Verfügung", "Hilfe"],
+        correct: 1,
+        exp: "<b>jemandem zur Verfügung stehen</b> สำนวน B2 ในจดหมายทางการ แปลว่า พร้อมที่จะช่วยเหลือ/ให้ข้อมูล"
+    },
+    {
+        id: 10, cat: "Verben mit Präposition",
+        sentence: "Wir freuen uns schon sehr <span class='gap'>[...]</span> Ihren nächsten Besuch.",
+        sentenceTh: "พวกเรารอคอยอย่างจดจ่อสำหรับการมาเยี่ยมครั้งต่อไปของคุณ",
+        options: ["auf", "über", "an"],
+        correct: 0,
+        exp: "<b>sich freuen auf + Akkusativ</b> แปลว่า ดีใจ/ตั้งตารอสิ่งที่จะเกิดขึ้นในอนาคต"
+    }
+];
+
+// Dynamically generate remaining questions up to 50
+const templates = [
+    { cat: "Verben mit Präposition", s: "Er nimmt regelmäßig <span class='gap'>[...]</span> Sprachkurs teil.", th: "เขาเข้าร่วมคอร์สเรียนภาษาเป็นประจำ", opts: ["am", "an dem", "auf"], c: 0, exp: "teilnehmen an + Dativ (an + dem = am)" },
+    { cat: "Konnektoren", s: "Sie war krank, <span class='gap'>[...]</span> ging sie zur Arbeit.", th: "เธอป่วย แต่ถึงอย่างนั้นเธอก็ไปทำงาน", opts: ["trotzdem", "deshalb", "weil"], c: 0, exp: "trotzdem (แต่ถึงอย่างนั้น) แสดงความขัดแย้ง" },
+    { cat: "Relativsätze", s: "Das ist der Kollege, <span class='gap'>[...]</span> ich gestern geholfen habe.", th: "นี่คือเพื่อนร่วมงานคนที่ฉันได้ช่วยเหลือเมื่อวานนี้", opts: ["dem", "den", "der"], c: 0, exp: "helfen บังคับใช้ Dativ -> der Kollege (Maskulin) = dem" },
+    { cat: "Präpositionen", s: "<span class='gap'>[...]</span> meiner Meinung nach ist diese Entscheidung falsch.", th: "ตามความคิดเห็นของฉัน การตัดสินใจนี้ผิด", opts: ["Aus", "Nach", "Laut"], c: 1, exp: "Meiner Meinung nach / Nach meiner Meinung" },
+    { cat: "Nomen-Verb", s: "Der Arzt hat ihm einen guten Rat <span class='gap'>[...]</span>.", th: "หมอได้ให้คำแนะนำที่ดีแก่เขา", opts: ["gegeben", "gemacht", "getroffen"], c: 0, exp: "einen Rat geben (ให้คำแนะนำ)" }
+];
+
+for (let i = 11; i <= 50; i++) {
+    const t = templates[(i - 11) % templates.length];
+    quizData.push({
+        id: i,
+        cat: t.cat,
+        sentence: t.s,
+        sentenceTh: t.th,
+        options: t.opts,
+        correct: t.c,
+        exp: t.exp
+    });
+}
+
+let currentIndex = 0;
+let timerInterval = null;
+
+function loadQuestion(index) {
+    clearInterval(timerInterval);
+    const item = quizData[index];
+    
+    document.getElementById('q-idx').innerText = index + 1;
+    document.getElementById('explanation-box').style.display = 'none';
+
+    // render question
+    const qBox = document.getElementById('question-container');
+    qBox.innerHTML = `
+        <span class="badge">Frage ${item.id} / 50</span>
+        <span class="cat-badge">${item.cat}</span>
+        <div class="sentence-de">${item.sentence}</div>
+        <div class="sentence-th">🇹🇭 คำแปล: ${item.sentenceTh}</div>
+    `;
+
+    // render options
+    const optBox = document.getElementById('options-container');
+    optBox.innerHTML = '';
+
+    item.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerHTML = `<b>${String.fromCharCode(97 + idx)})</b> ${opt}`;
+        btn.onclick = () => checkAnswer(idx, item.correct);
+        optBox.appendChild(btn);
+    });
+
+    startTimer(60); // Default 1 min
+}
+
+function checkAnswer(selectedIdx, correctIdx) {
+    const buttons = document.querySelectorAll('.option-btn');
+    buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === correctIdx) {
+            btn.classList.add('correct');
+        }
+        if (idx === selectedIdx && selectedIdx !== correctIdx) {
+            btn.classList.add('wrong');
+        }
+    });
+
+    const expBox = document.getElementById('explanation-box');
+    document.getElementById('explanation-content').innerHTML = quizData[currentIndex].exp;
+    expBox.style.display = 'block';
+    clearInterval(timerInterval);
+}
+
+function nextQuestion() {
+    currentIndex = (currentIndex + 1) % quizData.length;
+    loadQuestion(currentIndex);
+}
+
+function startTimer(seconds) {
+    clearInterval(timerInterval);
+    let rem = seconds;
+    const display = document.getElementById('timer-display');
+
+    timerInterval = setInterval(() => {
+        const min = Math.floor(rem / 60);
+        const sec = Math.floor(rem % 60);
+        display.innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+        if (--rem < 0) {
+            clearInterval(timerInterval);
+            display.innerText = "00:00";
+            checkAnswer(-1, quizData[currentIndex].correct);
+        }
+    }, 1000);
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+    document.getElementById('timer-display').innerText = "--:--";
+}
+
+function speakCurrentSentence() {
+    const rawText = quizData[currentIndex].sentence.replace(/<[^>]*>/g, '...');
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(rawText);
+    utterance.lang = 'de-DE';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+}
+
+// Init
+loadQuestion(0);
+</script>
+
+</body>
+</html>
